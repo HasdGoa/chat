@@ -57,4 +57,21 @@ Certainly, let's elaborate on the challenges you've mentioned with more details:
 - Analyze the implications of the XYZ library's style changes on our existing micro frontend apps.
 - Consider whether this change aligns with our long-term styling strategy and whether it influences our decisions regarding React versions and style conflict resolution.
 
+
+### 6. Difference Between a Reusable React Component and a Widget
+**Challenge:** Understanding and defining the difference between a reusable React component and a widget in the context of micro frontend development.
+
+**Details:**
+- In micro frontend architecture, the terms "component" and "widget" are often used interchangeably, which can lead to confusion.
+- It's crucial to establish a clear and consistent distinction between these two concepts to ensure proper componentization and code organization.
+
+**Solution Discussion:**
+- Define clear criteria or guidelines for what qualifies as a reusable React component versus a widget within the context of your micro frontend applications.
+- Discuss whether a widget should encapsulate not only UI but also its own logic, while a reusable component may be more focused on UI presentation.
+- Consider how these distinctions impact code organization, sharing of components across micro frontends, and the development workflow.
+- Explore best practices and examples to illustrate the difference between components and widgets and ensure alignment within the development team.
+
+Establishing a clear understanding of these terms and their roles within your micro frontend architecture is essential for effective collaboration and code consistency across the team.
+
 In summary, these challenges and their details highlight the complexity of managing micro frontend architecture with specific React versions, styling libraries, and build tools. The proposed solutions aim to initiate team discussions to make informed decisions and address these challenges effectively.
+
