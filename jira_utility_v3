@@ -1,0 +1,84 @@
+Certainly! You can modify the script to read the access/product key from a text file named `auth.txt` in the project folder. Here's the updated script:
+
+```python
+import os
+import subprocess
+import requests
+
+def read_auth_key():
+    auth_file_path = os.path.join(os.path.dirname(__file__), "auth.txt")
+    try:
+        with open(auth_file_path, "r") as auth_file:
+            return auth_file.read().strip()
+    except FileNotFoundError:
+        print(f"Error: {auth_file_path} not found.")
+        exit(1)
+
+def get_jira_tags(jira_url, project_key, access_key):
+    version_url = f"{jira_url}/rest/api/2/project/{project_key}/version"
+    headers = {"Authorization": f"Basic {access_key}"}
+    
+    response = requests.get(version_url, headers=headers)
+    
+    if response.status_code == 200:
+        tags = [version['name'] for version in response.json()]
+        return tags
+    else:
+        print(f"Error fetching Jira versions: {response.text}")
+        return []
+
+def choose_release_tag(tags):
+    print("Choose a release/tag:")
+    for idx, tag in enumerate(tags, start=1):
+        print(f"{idx}. {tag}")
+
+    while True:
+        try:
+            choice = int(input("Enter the number corresponding to your choice: "))
+            if 1 <= choice <= len(tags):
+                return tags[choice - 1]
+            else:
+                print("Invalid selection. Please try again.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def validate_commits(release_tag):
+    git_command = f"git log --pretty=format:\"%s|%an\" {release_tag}..HEAD"
+    commit_info = subprocess.check_output(git_command, shell=True, text=True).splitlines()
+
+    invalid_commits = []
+    for info in commit_info:
+        commit_message, committer_name = info.split('|', 1)
+        jira_id = commit_message.split()[0]
+        if jira_id.isupper() and '-' in jira_id:
+            jira_url = f"https://your-jira-instance.com/rest/api/2/issue/{jira_id}"
+            response = requests.get(jira_url)
+            if response.status_code != 200 or response.json().get('key') != jira_id:
+                invalid_commits.append((jira_id, committer_name))
+
+    return invalid_commits
+
+if __name__ == "__main__":
+    jira_url = input("Enter Jira instance URL: ")
+    project_key = input("Enter Jira project key: ")
+    access_key = read_auth_key()
+
+    tags = get_jira_tags(jira_url, project_key, access_key)
+    if not tags:
+        print("No tags found. Exiting.")
+        exit(1)
+
+    release_tag = choose_release_tag(tags)
+    print(f"Selected release/tag: {release_tag}")
+
+    invalid_commits = validate_commits(release_tag)
+
+    if invalid_commits:
+        print("\nCommits not part of the release:")
+        for jira_id, committer_name in invalid_commits:
+            print(f"JIRA: {jira_id}, Committer: {committer_name}")
+    else:
+        print("\nAll commits have valid JIRA IDs for the release.")
+```
+
+This version reads the access/product key from `auth.txt` in the project folder, removing the need for user input. Make sure to place the `auth.txt` file in the same directory as the script and populate it with your access/product key.
