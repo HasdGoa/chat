@@ -1,0 +1,63 @@
+Certainly! Here is a complete Python script that incorporates the functionality you've requested. Please ensure you have the `requests` library installed. You can install it using `pip install requests`.
+
+```python
+import subprocess
+import requests
+
+def get_jira_tags(jira_url, project_key):
+    version_url = f"{jira_url}/rest/api/2/project/{project_key}/version"
+    response = requests.get(version_url)
+    
+    if response.status_code == 200:
+        tags = [version['name'] for version in response.json()]
+        return tags
+    else:
+        print(f"Error fetching Jira versions: {response.text}")
+        return []
+
+def choose_release_tag(tags):
+    print("Choose a release/tag:")
+    for idx, tag in enumerate(tags, start=1):
+        print(f"{idx}. {tag}")
+
+    while True:
+        try:
+            choice = int(input("Enter the number corresponding to your choice: "))
+            if 1 <= choice <= len(tags):
+                return tags[choice - 1]
+            else:
+                print("Invalid selection. Please try again.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def validate_commits(release_tag):
+    git_command = f"git log --pretty=format:\"%s\" {release_tag}..HEAD"
+    commit_messages = subprocess.check_output(git_command, shell=True, text=True).splitlines()
+
+    for commit in commit_messages:
+        jira_id = commit.split()[0]
+        if jira_id.isupper() and '-' in jira_id:
+            jira_url = f"https://your-jira-instance.com/rest/api/2/issue/{jira_id}"
+            response = requests.get(jira_url)
+            if response.status_code != 200 or response.json().get('key') != jira_id:
+                print(f"Commit with invalid JIRA ID: {jira_id}")
+                exit(1)
+
+    print(f"All commits have valid JIRA IDs for release {release_tag}")
+
+if __name__ == "__main__":
+    jira_url = "https://your-jira-instance.com"
+    project_key = "YOUR_PROJECT_KEY"
+
+    tags = get_jira_tags(jira_url, project_key)
+    if not tags:
+        print("No tags found. Exiting.")
+        exit(1)
+
+    release_tag = choose_release_tag(tags)
+    print(f"Selected release/tag: {release_tag}")
+
+    validate_commits(release_tag)
+```
+
+Replace placeholders like `"https://your-jira-instance.com"` and `"YOUR_PROJECT_KEY"` with your actual Jira instance URL and project key. Run this Python script, and it will guide you through choosing a release/tag and then validate the commits for that tag.
