@@ -1,140 +1,61 @@
-Title: Exploring Micro Frontends: Various Approaches for Routing Between Host and MFE Apps
+# Exploring Routing Strategies in Micro Frontends with Webpack Module Federation
 
-Introduction:
-Micro Frontends (MFEs) have gained popularity as a scalable and modular approach to building web applications. One of the critical aspects of a micro frontend architecture is seamless communication and routing between the host application and its micro frontend modules. In this blog post, we will explore various approaches for achieving efficient routing between the host and MFE apps.
+Micro Frontends, coupled with Webpack Module Federation, have revolutionized the way we build and scale applications. One critical aspect is routing between the host application and its micro frontends (MFEs). In this blog post, we'll delve into various approaches for achieving seamless routing in a micro frontend architecture using Webpack Module Federation.
 
-### Approach 1: React Router v6+ Integration
+## Background
 
-#### Host Application Setup:
-```jsx
-// host-app/src/App.js
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import Home from './Home';
-import { lazy, Suspense } from 'react';
+Webpack Module Federation facilitates the composition of independent, self-contained modules into a unified application. Each module, in this context, represents a micro frontend. When it comes to navigation between these micro frontends and the host, there are multiple strategies to consider.
 
-const LazyMFEApp = lazy(() => import('mfeApp/MFEApp'));
+## 1. **Centralized Routing Configuration**
 
-function App() {
-  return (
-    <Router>
-      <nav>
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/mfe">MFE App</Link></li>
-        </ul>
-      </nav>
-      <Suspense fallback={<div>Loading...</div>}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/mfe" element={<LazyMFEApp />} />
-        </Routes>
-      </Suspense>
-    </Router>
-  );
-}
-```
+In this approach, the host application manages the routing configuration centrally. The host defines all routes and loads the appropriate micro frontend based on the route requested. This central control ensures a consistent user experience and allows the host to dictate the overall application structure.
 
-#### MFE Application Setup:
-```jsx
-// mfe-app/src/App.js
-import { Routes, Route } from 'react-router-dom';
-import MFEComponent from './MFEComponent';
+Pros:
+- Unified routing control in the host.
+- Easier to implement shared layouts and navigation elements.
 
-function MFEApp() {
-  return (
-    <Routes>
-      <Route path="/" element={<MFEComponent />} />
-    </Routes>
-  );
-}
-```
+Cons:
+- Potential bottleneck as the host handles all routing logic.
+- Less independence for micro frontends.
 
-This approach leverages React Router v6+ for declarative routing. The host and MFEs use lazy loading to dynamically load the MFE components when needed. It ensures a smooth user experience with minimal initial load times.
+## 2. **Decentralized Routing**
 
-### Approach 2: Custom Event Bus
+Alternatively, micro frontends can maintain their individual routing configurations. Each MFE defines its routes and renders them independently. The host dynamically fetches and embeds the required micro frontend based on the requested route. This approach promotes independence among micro frontends.
 
-In scenarios where a more event-driven communication is preferred, a custom event bus can be implemented for routing between host and MFEs.
+Pros:
+- Micro frontends manage their own routes.
+- Enhanced independence and isolation.
 
-#### Host Application Setup:
-```jsx
-// host-app/src/App.js
-import EventBus from './EventBus';
+Cons:
+- Potential for inconsistent user experience if not coordinated well.
+- Extra care needed to handle shared navigation elements.
 
-function App() {
-  const navigateToMFE = () => {
-    EventBus.emit('routeChange', '/mfe');
-  };
+## 3. **Hybrid Approach**
 
-  return (
-    <div>
-      <button onClick={navigateToMFE}>Navigate to MFE App</button>
-    </div>
-  );
-}
-```
+Combining elements of centralized and decentralized routing, the hybrid approach allows both the host and micro frontends to contribute to the routing structure. The host retains control over core routes, while micro frontends can define additional routes specific to their functionality.
 
-#### MFE Application Setup:
-```jsx
-// mfe-app/src/App.js
-import EventBus from './EventBus';
-import MFEComponent from './MFEComponent';
+Pros:
+- A balance between central control and micro frontend independence.
+- Flexibility for micro frontends to extend routes.
 
-EventBus.on('routeChange', (route) => {
-  // Navigate to the specified route in the MFE
-});
+Cons:
+- Complexity in coordinating routes between the host and micro frontends.
+- Care needed to prevent clashes in route definitions.
 
-function MFEApp() {
-  return (
-    <div>
-      <MFEComponent />
-    </div>
-  );
-}
-```
+## 4. **Event-Driven Routing**
 
-This approach abstracts routing using a global event bus, promoting loose coupling between the host and MFEs. It is particularly useful when the routing logic involves complex interactions or needs to be highly decoupled.
+This approach leverages a pub-sub or event-driven mechanism to communicate routing changes between the host and micro frontends. When a route changes, an event is emitted, triggering the appropriate micro frontend to handle the route change independently.
 
-### Approach 3: Server-Side Routing
+Pros:
+- Loose coupling between host and micro frontends.
+- Promotes independence and decoupling.
 
-For cases where the routing logic is handled at the server level, server-side routing can be a viable option.
+Cons:
+- Potential for increased complexity in handling events.
+- Care needed to maintain a consistent user experience.
 
-#### Host Application Setup:
-```jsx
-// host-app/src/App.js
-import { Link } from 'react-router-dom';
+## Conclusion
 
-function App() {
-  return (
-    <div>
-      <nav>
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><a href="http://mfe-app.com">MFE App</a></li>
-        </ul>
-      </nav>
-    </div>
-  );
-}
-```
+Routing in a micro frontend architecture with Webpack Module Federation involves a careful consideration of trade-offs between central control and micro frontend independence. The chosen strategy depends on factors such as project requirements, team collaboration, and the desired level of autonomy for micro frontends.
 
-#### MFE Application Setup:
-```jsx
-// mfe-app/src/App.js
-import MFEComponent from './MFEComponent';
-
-function MFEApp() {
-  return (
-    <div>
-      <MFEComponent />
-    </div>
-  );
-}
-```
-
-This approach relies on traditional anchor tags for navigation, and the server is responsible for handling the routing logic. While this reduces client-side complexity, it may lead to increased server load and potentially slower navigation.
-
-### Conclusion:
-
-Choosing the right approach for routing between host and MFE apps depends on the specific requirements and constraints of your project. React Router v6+ integration provides a robust and declarative solution, while a custom event bus promotes flexibility and loose coupling. Server-side routing, on the other hand, simplifies the client but shifts routing responsibility to the server.
-
-Consider the trade-offs and requirements of your micro frontend architecture when selecting the most suitable routing approach. Each method has its strengths and weaknesses, and the optimal solution may involve a combination of these approaches for a well-rounded micro frontend architecture.
+Ultimately, the flexibility offered by Webpack Module Federation empowers developers to choose the routing approach that best aligns with their application's architecture and goals. Whether opting for a centralized, decentralized, hybrid, or event-driven strategy, the key is to strike a balance that fosters maintainability, scalability, and a seamless user experience.
