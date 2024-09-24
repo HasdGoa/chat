@@ -1,0 +1,53 @@
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+@Component
+public class PathForwardingInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String requestURI = request.getRequestURI();
+
+        // Check if the path starts with /xyz and rewrite it to remove /xyz
+        if (requestURI.startsWith("/xyz")) {
+            // Forward the request to the path without /xyz
+            request.getRequestDispatcher(requestURI.substring(4)).forward(request, response);
+            return false; // Return false to stop further processing of this request
+        }
+
+        return true; // Proceed as normal if the path doesn't start with /xyz
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        // Nothing to do after handling the request
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        // Nothing to do after completion
+    }
+}
+
+/*************************************************************************************/
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private PathForwardingInterceptor pathForwardingInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(pathForwardingInterceptor).addPathPatterns("/xyz/**");
+    }
+}
