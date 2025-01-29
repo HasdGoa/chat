@@ -1,0 +1,88 @@
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+
+// Mock API call for data fetching
+const fetchGridData = async (type, { startRow, endRow, sortModel, filterModel }) => {
+  const response = await fetch(`/api/data/${type}`, {
+    method: 'POST',
+    body: JSON.stringify({ startRow, endRow, sortModel, filterModel }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch data');
+  }
+  return response.json();
+};
+
+const TabbedGridView = () => {
+  const [activeTab, setActiveTab] = useState('type1');
+  const gridRef = useRef();
+
+  const tabs = [
+    { id: 'type1', label: 'Type 1' },
+    { id: 'type2', label: 'Type 2' },
+    { id: 'type3', label: 'Type 3' },
+  ];
+
+  const columnDefs = useMemo(() => {
+    const commonColumns = [
+      { field: 'id', headerName: 'ID' },
+      { field: 'name', headerName: 'Name' },
+    ];
+    if (activeTab === 'type2') {
+      return [...commonColumns, { field: 'value', headerName: 'Value' }];
+    } else if (activeTab === 'type3') {
+      return [...commonColumns, { field: 'date', headerName: 'Date' }];
+    }
+    return commonColumns;
+  }, [activeTab]);
+
+  const setupDatasource = (type) => {
+    const datasource = {
+      getRows: async (params) => {
+        const { startRow, endRow, sortModel, filterModel } = params.request;
+        try {
+          const data = await fetchGridData(type, { startRow, endRow, sortModel, filterModel });
+          params.successCallback(data.rows, data.totalCount);
+        } catch (error) {
+          params.failCallback();
+        }
+      },
+    };
+    gridRef.current.api.setServerSideDatasource(datasource);
+  };
+
+  useEffect(() => {
+    if (gridRef.current) {
+      setupDatasource(activeTab);
+    }
+  }, [activeTab]);
+
+  return (
+    <div>
+      <div className="tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={activeTab === tab.id ? 'active' : ''}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="ag-theme-alpine" style={{ height: 500, width: '100%' }}>
+        <AgGridReact
+          ref={gridRef}
+          columnDefs={columnDefs}
+          rowModelType="serverSide"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default TabbedG
+ridView;
